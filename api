@@ -5,7 +5,7 @@ const TEAM_NAME = "Love Thy Nabers";
 
 export default async function handler(req, res) {
   try {
-    // 1. Get an access token from Yahoo using refresh token
+    // Get access token from Yahoo using refresh token
     const tokenResponse = await fetch("https://api.login.yahoo.com/oauth2/get_token", {
       method: "POST",
       headers: {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
 
-    // 2. Fetch league standings
+    // Fetch league standings
     const standingsResponse = await fetch(`https://fantasysports.yahooapis.com/fantasy/v2/league/${LEAGUE_ID}/standings?format=json`, {
       headers: {
         Authorization: `Bearer ${accessToken}`
@@ -31,16 +31,16 @@ export default async function handler(req, res) {
     });
     const standingsData = await standingsResponse.json();
 
-    // 3. Extract teams and scores
+    // Extract teams and points
     const teams = standingsData.fantasy_content.league[1].standings[0].teams;
     const sortedTeams = teams.sort((a, b) => b.team_points.total - a.team_points.total);
 
-    // 4. Determine if Jordan is playoff-bound
+    // Determine playoff status
     const jordan = teams.find(team => team.name === TEAM_NAME);
     const sixthPlaceScore = sortedTeams[5].team_points.total; // 6th place by points
     const playoffStatus = (jordan.team_points.total >= sixthPlaceScore) ? "YES" : "NO";
 
-    // 5. Respond
+    // Send response
     res.status(200).json({
       message: `Jordan is ${jordan.record}. Against all odds (suck it Mike), he’s playoff-bound.`,
       playoffStatus
@@ -51,4 +51,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Failed to fetch standings" });
   }
 }
-
