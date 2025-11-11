@@ -148,10 +148,10 @@
   <script>
     const REFRESH_MS = 1000 * 60 * 60; // 1 hour
 
-    // === Fetch real data from Vercel serverless function ===
+    // === Fetch real data from your Vercel serverless function ===
     async function fetchStatus(){
       try {
-        const resp = await fetch('https://<your-vercel-domain>/api/status');
+        const resp = await fetch('https://football-tawny-eight.vercel.app/api/status');
         const json = await resp.json();
         return json; // expects { qualifies: bool, reason: string }
       } catch(e){
@@ -200,4 +200,3 @@
   </script>
 </body>
 </html>
-
