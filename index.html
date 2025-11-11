@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Is Jordan in the Playoffs?</title>
 
-  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;700&display=swap" rel="stylesheet">
 
   <style>
@@ -28,15 +27,12 @@
                   rgba(0,0,0,0.02) 30%),
                   linear-gradient(0deg,#070708 0%, #0b0b0c 100%);
       color:#ddd;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
       display:flex;
       align-items:center;
       justify-content:center;
       padding:24px;
     }
 
-    /* smoky overlay */
     .smoke{
       position:fixed;
       inset:0;
@@ -68,9 +64,7 @@
     h1{
       margin:0;
       font-size: clamp(20px, 3.5vw, 32px);
-      letter-spacing: -0.5px;
       color:#f5f5f5;
-      text-transform: none;
     }
 
     .question{
@@ -87,11 +81,11 @@
       line-height:1;
       letter-spacing: -1px;
       transition: all 400ms ease;
-      text-shadow: 0 10px 40px rgba(0,0,0,0.6);
       display:flex;
       align-items:center;
       justify-content:center;
       gap:14px;
+      text-shadow: 0 10px 40px rgba(0,0,0,0.6);
     }
 
     .pill{
@@ -107,6 +101,8 @@
 
     .yes { color:var(--green); text-shadow: 0 0 32px rgba(0,230,118,0.18); }
     .no  { color:var(--red); text-shadow: 0 0 30px rgba(255,70,102,0.12); }
+    .pulse { animation: pulse 1100ms ease infinite; }
+    @keyframes pulse{ 0%{transform:scale(1);}50%{transform:scale(1.03);}100%{transform:scale(1);} }
 
     .sub{
       margin:0;
@@ -122,34 +118,6 @@
       font-size:13px;
     }
 
-    /* small footer */
-    .footer{
-      margin-top:8px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      color:var(--muted);
-      font-size:13px;
-      opacity:0.95;
-    }
-
-    .team{
-      font-weight:700;
-      letter-spacing:0.2px;
-    }
-
-    /* subtle heartbeat when YES appears */
-    .pulse {
-      animation: pulse 1100ms ease infinite;
-    }
-    @keyframes pulse{
-      0%{ transform:scale(1); }
-      50%{ transform:scale(1.03); }
-      100%{ transform:scale(1); }
-    }
-
-    /* responsive tweaks */
     @media (max-width:520px){
       .status{ font-size:48px; }
       .card{ padding:20px; }
@@ -172,37 +140,34 @@
 
       <div class="footer">
         <div id="updated" class="meta">Last checked: —</div>
-        <div class="meta">Auto-refreshes hourly. Prototype uses randomized demo data.</div>
+        <div class="meta">Auto-refreshes hourly.</div>
       </div>
     </div>
   </main>
 
   <script>
-    // === Configuration / editable ===
-    const TEAM_NAME = "Love Thy Nabers";
-    const JORDAN_RECORD_TEXT = "Jordan is 3–7.";
-    const YES_SUB = "Jordan is 3–7. Against all odds (suck it Mike), he’s playoff-bound.";
-    const NO_SUB  = "Jordan is 3–7 and his dreams are dead. Again.";
     const REFRESH_MS = 1000 * 60 * 60; // 1 hour
 
-    // === Demo: randomized result for prototype ===
-    function demoRandomResult(){
-      // 50/50 demo. Change weighting if you'd like (e.g., 0.2 for 20% YES):
-      const yes = Math.random() < 0.5;
-      return { qualifies: yes, reason: yes ? YES_SUB : NO_SUB };
+    // === Fetch real data from Vercel serverless function ===
+    async function fetchStatus(){
+      try {
+        const resp = await fetch('https://<your-vercel-domain>/api/status');
+        const json = await resp.json();
+        return json; // expects { qualifies: bool, reason: string }
+      } catch(e){
+        console.error(e);
+        return { qualifies:false, reason:"Failed to load live data. :(" };
+      }
     }
 
-    // === Update UI ===
     function updateUI(result){
       const answerEl = document.getElementById("answer");
       const subtitle = document.getElementById("subtitle");
       const updated = document.getElementById("updated");
       const now = new Date().toLocaleString();
 
-      // Remove any old classes
       answerEl.classList.remove("yes","no","pulse");
-
-      if (result.qualifies){
+      if(result.qualifies){
         answerEl.textContent = "YES";
         answerEl.classList.add("yes","pulse");
       } else {
@@ -214,59 +179,25 @@
       updated.textContent = "Last checked: " + now;
     }
 
-    // === Primary status fetcher for prototype ===
-    async function fetchStatus(){
-      // For this demo we return randomized result.
-      // Replace this function's internals to call your live-data endpoint / proxy when you're ready.
-      return demoRandomResult();
-    }
-
-    // === Starter + periodic refresh ===
     async function refreshNow(){
-      try {
-        // show loading while fetching
-        document.getElementById("answer").textContent = "…";
-        document.getElementById("subtitle").textContent = "Checking the impossible…";
-        const status = await fetchStatus();
-        updateUI(status);
-      } catch (err) {
-        document.getElementById("answer").textContent = "—";
-        document.getElementById("subtitle").textContent = "Failed to load. (Demo mode)";
-        document.getElementById("updated").textContent = "Last checked: error";
-        console.error("fetchStatus error:", err);
-      }
+      const answerEl = document.getElementById("answer");
+      const subtitle = document.getElementById("subtitle");
+      answerEl.textContent = "…";
+      subtitle.textContent = "Checking the impossible…";
+      const status = await fetchStatus();
+      updateUI(status);
     }
 
     // initial run
     refreshNow();
-
-    // hourly refresh
+    // auto-refresh
     setInterval(refreshNow, REFRESH_MS);
 
-    // Optional: convenience to auto-retry if tab becomes visible again
+    // refresh if tab comes back into view
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) refreshNow();
     });
-
-    /* ----------------------------------------------------------------------
-      NOTES / Future: Swap demoRandomResult for real data
-
-      When you're ready to make this live against Yahoo standings, you'll need
-      a small server-side proxy (or a CORS-friendly endpoint) because Yahoo's
-      public pages often block direct cross-origin scraping from a static page.
-
-      Example plan:
-      1) Create a tiny server (Node/Express, Vercel function, or GitHub Pages + serverless function)
-      2) The server fetches your league's standings from Yahoo (or uses Yahoo API if you obtain credentials)
-      3) Server returns a small JSON like:
-         { "teamName":"Love Thy Nabers", "record":"3-7", "totalPoints":1234.5, "sixthTeamPoints":1200.3 }
-      4) Replace fetchStatus() to call that endpoint, then compute:
-         - if team is inside top 5 by record => qualifies
-         - else if totalPoints > sixthTeamPoints => qualifies
-         - else => not qualified
-
-      If you'd like, I can provide the exact serverless function code later.
-    ---------------------------------------------------------------------- */
   </script>
 </body>
 </html>
+
