@@ -1,0 +1,18 @@
+// api/status.js
+import fetch from 'node-fetch';
+
+export default async function handler(req, res) {
+  const CLIENT_ID = process.env.YAHOO_CLIENT_ID;
+  const CLIENT_SECRET = process.env.YAHOO_CLIENT_SECRET;
+  const LEAGUE_KEY = '406.l.378844'; // replace if needed
+  const TEAM_NAME = 'Love Thy Nabers';
+
+  // TODO: Implement OAuth2 token request here
+  // For demo purposes we return a randomized YES/NO
+  const qualifies = Math.random() < 0.5;
+  const reason = qualifies
+    ? 'Jordan is 3–7. Against all odds (suck it Mike), he’s playoff-bound.'
+    : 'Jordan is 3–7 and his dreams are dead. Again.';
+
+  res.status(200).json({ qualifies, reason });
+}
